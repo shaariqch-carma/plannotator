@@ -1,10 +1,10 @@
 {
-  "name": "plannotator",
-  "description": "Interactive Plan Review: Mark up and refine your plans using a UI, easily share for team collaboration, automatically integrates with plan mode hooks.",
-  "version": "0.6.7",
+  "name": "plannotator-custom",
+  "description": "Interactive Plan Review with AI Review: Mark up and refine your plans using a UI, get AI feedback via VibeProxy, easily share for team collaboration.",
+  "version": "0.7.0",
   "author": {
-    "name": "backnotprop"
+    "name": "shaariqch-carma"
   },
-  "repository": "https://github.com/backnotprop/plannotator",
-  "keywords": ["planning", "review", "hooks", "ExitPlanMode", "collaboration"]
+  "repository": "https://github.com/shaariqch-carma/plannotator",
+  "keywords": ["planning", "review", "hooks", "ExitPlanMode", "collaboration", "ai", "vibeproxy"]
 }

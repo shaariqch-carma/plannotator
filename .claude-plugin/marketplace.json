@@ -1,13 +1,13 @@
 {
-  "name": "plannotator",
+  "name": "plannotator-custom",
   "owner": {
-    "name": "backnotprop"
+    "name": "shaariqch-carma"
   },
   "plugins": [
     {
-      "name": "plannotator",
+      "name": "plannotator-custom",
       "source": "./apps/hook",
-      "description": "Interactive Plan Review: Mark up and refine your plans using a UI, easily share for team collaboration, automatically integrates with plan mode hooks."
+      "description": "Interactive Plan Review with AI Review: Mark up and refine your plans using a UI, get AI feedback via VibeProxy, easily share for team collaboration."
     }
   ]
 }
