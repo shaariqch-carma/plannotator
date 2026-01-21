@@ -33,9 +33,11 @@ import {
 import {
   getCodexReviewSettings,
   saveCodexReviewSettings,
-  CODEX_MODEL_OPTIONS,
+  fetchAvailableModels,
+  FALLBACK_MODEL_OPTIONS,
   getDefaultPrompt,
   type CodexReviewSettings,
+  type ModelOption,
 } from '../utils/codexReview';
 import { useAgents } from '../hooks/useAgents';
 
@@ -65,9 +67,11 @@ export const Settings: React.FC<SettingsProps> = ({ taterMode, onTaterModeChange
   const [codexReview, setCodexReview] = useState<CodexReviewSettings>({
     enabled: false,
     proxyUrl: 'http://localhost:8317',
-    model: 'gpt-4o',
+    model: 'gpt-5-codex',
     customPrompt: '',
   });
+  const [availableModels, setAvailableModels] = useState<ModelOption[]>(FALLBACK_MODEL_OPTIONS);
+  const [modelsLoading, setModelsLoading] = useState(false);
   const [agentWarning, setAgentWarning] = useState<string | null>(null);
 
   // Fetch available agents for OpenCode
@@ -107,6 +111,16 @@ export const Settings: React.FC<SettingsProps> = ({ taterMode, onTaterModeChange
         .finally(() => setVaultsLoading(false));
     }
   }, [obsidian.enabled]);
+
+  // Fetch available models when AI Review is enabled
+  useEffect(() => {
+    if (codexReview.enabled && codexReview.proxyUrl) {
+      setModelsLoading(true);
+      fetchAvailableModels(codexReview.proxyUrl)
+        .then(setAvailableModels)
+        .finally(() => setModelsLoading(false));
+    }
+  }, [codexReview.enabled, codexReview.proxyUrl]);
 
   const handleObsidianChange = (updates: Partial<ObsidianSettings>) => {
     const newSettings = { ...obsidian, ...updates };
@@ -425,17 +439,23 @@ export const Settings: React.FC<SettingsProps> = ({ taterMode, onTaterModeChange
                         {/* Model Selection */}
                         <div className="space-y-1.5">
                           <label className="text-xs text-muted-foreground">Model</label>
-                          <select
-                            value={codexReview.model}
-                            onChange={(e) => handleCodexReviewChange({ model: e.target.value })}
-                            className="w-full px-3 py-2 bg-muted rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer"
-                          >
-                            {CODEX_MODEL_OPTIONS.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
+                          {modelsLoading ? (
+                            <div className="w-full px-3 py-2 bg-muted rounded-lg text-xs text-muted-foreground">
+                              Loading models...
+                            </div>
+                          ) : (
+                            <select
+                              value={codexReview.model}
+                              onChange={(e) => handleCodexReviewChange({ model: e.target.value })}
+                              className="w-full px-3 py-2 bg-muted rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer"
+                            >
+                              {availableModels.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          )}
                         </div>
 
                         {/* Custom Prompt */}

@@ -13,7 +13,7 @@ const STORAGE_KEY_PROMPT = 'plannotator-codex-prompt';
 const STORAGE_KEY_PROXY_URL = 'plannotator-codex-proxy-url';
 
 const DEFAULT_PROXY_URL = 'http://localhost:8317';
-const DEFAULT_MODEL = 'gpt-4o';
+const DEFAULT_MODEL = 'gpt-5-codex';
 const DEFAULT_PROMPT = `You are reviewing an implementation plan for a software project. Analyze the plan and provide constructive feedback on:
 
 1. **Completeness**: Are there missing steps or considerations?
@@ -30,12 +30,32 @@ export interface CodexReviewSettings {
   customPrompt: string;
 }
 
-export const CODEX_MODEL_OPTIONS = [
-  { value: 'gpt-4o', label: 'GPT-4o' },
-  { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
+export const FALLBACK_MODEL_OPTIONS = [
+  { value: 'gpt-5-codex', label: 'GPT-5 Codex' },
   { value: 'claude-sonnet-4-20250514', label: 'Claude Sonnet 4' },
-  { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
 ];
+
+export interface ModelOption {
+  value: string;
+  label: string;
+}
+
+export const fetchAvailableModels = async (proxyUrl: string): Promise<ModelOption[]> => {
+  try {
+    const response = await fetch(`${proxyUrl}/v1/models`);
+    if (!response.ok) return FALLBACK_MODEL_OPTIONS;
+
+    const data = await response.json();
+    if (!data.data || !Array.isArray(data.data)) return FALLBACK_MODEL_OPTIONS;
+
+    return data.data.map((model: { id: string; owned_by?: string }) => ({
+      value: model.id,
+      label: model.id,
+    }));
+  } catch {
+    return FALLBACK_MODEL_OPTIONS;
+  }
+};
 
 export const getCodexReviewSettings = (): CodexReviewSettings => ({
   enabled: storage.getItem(STORAGE_KEY_ENABLED) === 'true',
