@@ -25,12 +25,18 @@ import {
   saveAnnotations,
   saveFinalSnapshot,
 } from "./storage";
+import {
+  readFile,
+  listDirectory,
+  searchCode,
+} from "./codebase";
 
 // Re-export utilities
 export { isRemoteSession, getServerPort } from "./remote";
 export { openBrowser } from "./browser";
 export * from "./integrations";
 export * from "./storage";
+export * from "./codebase";
 
 // --- Types ---
 
@@ -177,6 +183,49 @@ export async function startPlannotatorServer(
           if (url.pathname === "/api/obsidian/vaults") {
             const vaults = detectObsidianVaults();
             return Response.json({ vaults });
+          }
+
+          // API: Read file from codebase
+          if (url.pathname === "/api/codebase/read") {
+            const path = url.searchParams.get("path");
+            if (!path) {
+              return Response.json({ error: "Missing path parameter" }, { status: 400 });
+            }
+            try {
+              const content = await readFile(process.cwd(), path);
+              return Response.json({ content, path });
+            } catch (err) {
+              const message = err instanceof Error ? err.message : "Failed to read file";
+              return Response.json({ error: message }, { status: 400 });
+            }
+          }
+
+          // API: List directory contents
+          if (url.pathname === "/api/codebase/list") {
+            const path = url.searchParams.get("path") || ".";
+            try {
+              const entries = await listDirectory(process.cwd(), path);
+              return Response.json({ entries, path });
+            } catch (err) {
+              const message = err instanceof Error ? err.message : "Failed to list directory";
+              return Response.json({ error: message }, { status: 400 });
+            }
+          }
+
+          // API: Search code
+          if (url.pathname === "/api/codebase/search") {
+            const pattern = url.searchParams.get("pattern");
+            const glob = url.searchParams.get("glob") || undefined;
+            if (!pattern) {
+              return Response.json({ error: "Missing pattern parameter" }, { status: 400 });
+            }
+            try {
+              const results = await searchCode(process.cwd(), pattern, glob);
+              return Response.json({ results, pattern, glob });
+            } catch (err) {
+              const message = err instanceof Error ? err.message : "Search failed";
+              return Response.json({ error: message }, { status: 400 });
+            }
           }
 
           // API: Get available agents (OpenCode only)

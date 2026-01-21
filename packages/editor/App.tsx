@@ -360,7 +360,7 @@ const App: React.FC = () => {
   const { agents: availableAgents, validateAgent, getAgentWarning } = useAgents(origin);
 
   // AI-powered plan review via VibeProxy
-  const { isReviewing, error: reviewError, reviewPlan } = useCodexReview();
+  const { isReviewing, progress: reviewProgress, error: reviewError, reviewPlan } = useCodexReview();
   const [showReviewError, setShowReviewError] = useState(false);
 
   // Apply shared annotations to DOM after they're loaded
@@ -950,6 +950,57 @@ const App: React.FC = () => {
           subMessage="Check that VibeProxy is running on the configured port."
           variant="warning"
         />
+
+        {/* AI Review Progress Overlay */}
+        {isReviewing && (
+          <div className="fixed bottom-4 right-4 z-[90] max-w-sm">
+            <div className="bg-card/95 backdrop-blur-xl border border-border rounded-lg shadow-xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-border/50 flex items-center gap-2">
+                <svg className="w-4 h-4 animate-spin text-violet-400" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                <span className="text-sm font-medium text-foreground">AI Review in progress...</span>
+              </div>
+              <div className="px-4 py-3 max-h-48 overflow-y-auto">
+                <div className="space-y-1.5">
+                  {reviewProgress.map((entry, idx) => (
+                    <div key={idx} className="flex items-start gap-2 text-xs">
+                      {entry.type === 'tool_call' && (
+                        <>
+                          <span className="text-violet-400 mt-0.5">→</span>
+                          <span className="text-muted-foreground">{entry.message}</span>
+                        </>
+                      )}
+                      {entry.type === 'tool_result' && (
+                        <>
+                          <span className={entry.message.startsWith('Error:') ? 'text-red-400 mt-0.5' : 'text-green-400 mt-0.5'}>
+                            {entry.message.startsWith('Error:') ? '✗' : '✓'}
+                          </span>
+                          <span className={entry.message.startsWith('Error:') ? 'text-red-400' : 'text-muted-foreground/60'}>
+                            {entry.message.startsWith('Error:') ? entry.message : 'Done'}
+                          </span>
+                        </>
+                      )}
+                      {entry.type === 'thinking' && (
+                        <>
+                          <span className="text-blue-400 mt-0.5">◆</span>
+                          <span className="text-muted-foreground">{entry.message}</span>
+                        </>
+                      )}
+                      {entry.type === 'complete' && (
+                        <>
+                          <span className="text-green-400 mt-0.5">✓</span>
+                          <span className="text-green-400">{entry.message}</span>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Completion overlay - shown after approve/deny */}
         {submitted && (
