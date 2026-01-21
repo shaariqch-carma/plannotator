@@ -30,6 +30,13 @@ import {
   PERMISSION_MODE_OPTIONS,
   type PermissionMode,
 } from '../utils/permissionMode';
+import {
+  getCodexReviewSettings,
+  saveCodexReviewSettings,
+  CODEX_MODEL_OPTIONS,
+  getDefaultPrompt,
+  type CodexReviewSettings,
+} from '../utils/codexReview';
 import { useAgents } from '../hooks/useAgents';
 
 interface SettingsProps {
@@ -55,6 +62,12 @@ export const Settings: React.FC<SettingsProps> = ({ taterMode, onTaterModeChange
   const [agent, setAgent] = useState<AgentSwitchSettings>({ switchTo: 'build' });
   const [planSave, setPlanSave] = useState<PlanSaveSettings>({ enabled: true, customPath: null });
   const [permissionMode, setPermissionMode] = useState<PermissionMode>('bypassPermissions');
+  const [codexReview, setCodexReview] = useState<CodexReviewSettings>({
+    enabled: false,
+    proxyUrl: 'http://localhost:8317',
+    model: 'gpt-4o',
+    customPrompt: '',
+  });
   const [agentWarning, setAgentWarning] = useState<string | null>(null);
 
   // Fetch available agents for OpenCode
@@ -68,6 +81,7 @@ export const Settings: React.FC<SettingsProps> = ({ taterMode, onTaterModeChange
       setAgent(getAgentSwitchSettings());
       setPlanSave(getPlanSaveSettings());
       setPermissionMode(getPermissionModeSettings().mode);
+      setCodexReview(getCodexReviewSettings());
 
       // Validate agent setting when dialog opens
       if (origin === 'opencode') {
@@ -121,6 +135,12 @@ export const Settings: React.FC<SettingsProps> = ({ taterMode, onTaterModeChange
   const handlePermissionModeChange = (mode: PermissionMode) => {
     setPermissionMode(mode);
     savePermissionModeSettings(mode);
+  };
+
+  const handleCodexReviewChange = (updates: Partial<CodexReviewSettings>) => {
+    const newSettings = { ...codexReview, ...updates };
+    setCodexReview(newSettings);
+    saveCodexReviewSettings(updates);
   };
 
   const handleRegenerateIdentity = () => {
@@ -361,6 +381,85 @@ export const Settings: React.FC<SettingsProps> = ({ taterMode, onTaterModeChange
 
               {mode === 'plan' && (
                 <>
+                  <div className="border-t border-border" />
+
+                  {/* AI Review (Codex) */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-medium">AI Review</div>
+                        <div className="text-xs text-muted-foreground">
+                          Get AI feedback on plans via VibeProxy
+                        </div>
+                      </div>
+                      <button
+                        role="switch"
+                        aria-checked={codexReview.enabled}
+                        onClick={() => handleCodexReviewChange({ enabled: !codexReview.enabled })}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          codexReview.enabled ? 'bg-primary' : 'bg-muted'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
+                            codexReview.enabled ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {codexReview.enabled && (
+                      <div className="space-y-3 pl-0.5">
+                        {/* Proxy URL */}
+                        <div className="space-y-1.5">
+                          <label className="text-xs text-muted-foreground">Proxy URL</label>
+                          <input
+                            type="text"
+                            value={codexReview.proxyUrl}
+                            onChange={(e) => handleCodexReviewChange({ proxyUrl: e.target.value })}
+                            placeholder="http://localhost:8317"
+                            className="w-full px-3 py-2 bg-muted rounded-lg text-xs font-mono placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                          />
+                        </div>
+
+                        {/* Model Selection */}
+                        <div className="space-y-1.5">
+                          <label className="text-xs text-muted-foreground">Model</label>
+                          <select
+                            value={codexReview.model}
+                            onChange={(e) => handleCodexReviewChange({ model: e.target.value })}
+                            className="w-full px-3 py-2 bg-muted rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer"
+                          >
+                            {CODEX_MODEL_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Custom Prompt */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs text-muted-foreground">Review Prompt</label>
+                            <button
+                              onClick={() => handleCodexReviewChange({ customPrompt: getDefaultPrompt() })}
+                              className="text-[10px] text-primary hover:underline"
+                            >
+                              Reset to default
+                            </button>
+                          </div>
+                          <textarea
+                            value={codexReview.customPrompt}
+                            onChange={(e) => handleCodexReviewChange({ customPrompt: e.target.value })}
+                            rows={4}
+                            className="w-full px-3 py-2 bg-muted rounded-lg text-xs font-mono placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50 resize-none"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="border-t border-border" />
 
                   {/* Tater Mode */}

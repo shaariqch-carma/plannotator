@@ -4,7 +4,7 @@ import { Viewer, ViewerHandle } from '@plannotator/ui/components/Viewer';
 import { AnnotationPanel } from '@plannotator/ui/components/AnnotationPanel';
 import { ExportModal } from '@plannotator/ui/components/ExportModal';
 import { ConfirmDialog } from '@plannotator/ui/components/ConfirmDialog';
-import { Annotation, Block, EditorMode } from '@plannotator/ui/types';
+import { Annotation, Block, EditorMode, AnnotationType } from '@plannotator/ui/types';
 import { ThemeProvider } from '@plannotator/ui/components/ThemeProvider';
 import { ModeToggle } from '@plannotator/ui/components/ModeToggle';
 import { ModeSwitcher } from '@plannotator/ui/components/ModeSwitcher';
@@ -19,6 +19,8 @@ import { getObsidianSettings, getEffectiveVaultPath, CUSTOM_PATH_SENTINEL } from
 import { getBearSettings } from '@plannotator/ui/utils/bear';
 import { getAgentSwitchSettings, getEffectiveAgentName } from '@plannotator/ui/utils/agentSwitch';
 import { getPlanSaveSettings } from '@plannotator/ui/utils/planSave';
+import { useCodexReview } from '@plannotator/ui/hooks/useCodexReview';
+import { getCodexReviewSettings } from '@plannotator/ui/utils/codexReview';
 import {
   getPermissionModeSettings,
   needsPermissionModeSetup,
@@ -357,6 +359,10 @@ const App: React.FC = () => {
   // Fetch available agents for OpenCode (for validation on approve)
   const { agents: availableAgents, validateAgent, getAgentWarning } = useAgents(origin);
 
+  // AI-powered plan review via VibeProxy
+  const { isReviewing, error: reviewError, reviewPlan } = useCodexReview();
+  const [showReviewError, setShowReviewError] = useState(false);
+
   // Apply shared annotations to DOM after they're loaded
   useEffect(() => {
     if (pendingSharedAnnotations && pendingSharedAnnotations.length > 0) {
@@ -630,6 +636,28 @@ const App: React.FC = () => {
     setGlobalAttachments(prev => prev.filter(p => p !== path));
   };
 
+  const handleCodexReview = async () => {
+    const result = await reviewPlan(markdown, blocks, annotations, globalAttachments);
+    if (result) {
+      const settings = getCodexReviewSettings();
+      const reviewAnnotation: Annotation = {
+        id: `codex-review-${Date.now()}`,
+        blockId: '',
+        startOffset: 0,
+        endOffset: 0,
+        type: AnnotationType.GLOBAL_COMMENT,
+        text: `**AI Review (${settings.model}):**\n\n${result}`,
+        originalText: '',
+        createdA: Date.now(),
+        author: 'codex-review',
+      };
+      setAnnotations(prev => [...prev, reviewAnnotation]);
+      setIsPanelOpen(true);
+    } else if (reviewError) {
+      setShowReviewError(true);
+    }
+  };
+
   const diffOutput = useMemo(() => exportDiff(blocks, annotations, globalAttachments), [blocks, annotations, globalAttachments]);
 
   const agentName = useMemo(() => {
@@ -697,6 +725,35 @@ const App: React.FC = () => {
                   </svg>
                   <span className="hidden md:inline">{isSubmitting ? 'Sending...' : 'Send Feedback'}</span>
                 </button>
+
+                {/* Review with Codex button - only show if enabled */}
+                {getCodexReviewSettings().enabled && (
+                  <button
+                    onClick={handleCodexReview}
+                    disabled={isReviewing || isSubmitting}
+                    className={`p-1.5 md:px-2.5 md:py-1 rounded-md text-xs font-medium transition-all ${
+                      isReviewing || isSubmitting
+                        ? 'opacity-50 cursor-not-allowed bg-muted text-muted-foreground'
+                        : 'bg-violet-500/15 text-violet-400 hover:bg-violet-500/25 border border-violet-500/30'
+                    }`}
+                    title="Review with Codex"
+                  >
+                    <svg className="w-4 h-4 md:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                    {isReviewing ? (
+                      <span className="hidden md:flex items-center gap-1.5">
+                        <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Reviewing...
+                      </span>
+                    ) : (
+                      <span className="hidden md:inline">AI Review</span>
+                    )}
+                  </button>
+                )}
 
                 <div className="relative group/approve">
                   <button
@@ -882,6 +939,16 @@ const App: React.FC = () => {
           cancelText="Cancel"
           variant="warning"
           showCancel
+        />
+
+        {/* Codex Review Error Dialog */}
+        <ConfirmDialog
+          isOpen={showReviewError && !!reviewError}
+          onClose={() => setShowReviewError(false)}
+          title="Review Failed"
+          message={reviewError || 'An error occurred during the AI review.'}
+          subMessage="Check that VibeProxy is running on the configured port."
+          variant="warning"
         />
 
         {/* Completion overlay - shown after approve/deny */}
