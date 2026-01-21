@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-REPO="backnotprop/plannotator"
+REPO="shaariqch-carma/plannotator"
 INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local}/bin"
 
 case "$(uname -s)" in
@@ -138,7 +138,7 @@ echo "  CLAUDE CODE USERS: YOU'RE ALL SET!"
 echo "=========================================="
 echo ""
 echo "Install the Claude Code plugin:"
-echo "  /plugin marketplace add backnotprop/plannotator"
-echo "  /plugin install plannotator@plannotator"
+echo "  /plugin marketplace add shaariqch-carma/plannotator-custom"
+echo "  /plugin install plannotator-custom@plannotator-custom"
 echo ""
 echo "The /plannotator-review command is ready to use after you restart Claude Code!"
