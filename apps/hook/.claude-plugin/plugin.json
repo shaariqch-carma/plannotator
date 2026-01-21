@@ -1,7 +1,7 @@
 {
   "name": "plannotator-custom",
   "description": "Interactive Plan Review with AI Review: Mark up and refine your plans using a UI, get AI feedback via VibeProxy, easily share for team collaboration.",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "author": {
     "name": "shaariqch-carma"
   },
