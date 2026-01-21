@@ -82,8 +82,6 @@ const executeToolCall = async (toolCall: ToolCall): Promise<string> => {
   }
 };
 
-const MAX_AGENT_TURNS = 10;
-
 export const useCodexReview = (): UseCodexReviewResult => {
   const [isReviewing, setIsReviewing] = useState(false);
   const [progress, setProgress] = useState<ProgressEntry[]>([]);
@@ -120,7 +118,7 @@ export const useCodexReview = (): UseCodexReviewResult => {
 
       addProgress('thinking', 'Starting codebase analysis...');
 
-      for (let turn = 0; turn < MAX_AGENT_TURNS; turn++) {
+      for (let turn = 0; turn < settings.maxTurns; turn++) {
         const response = await fetch(`${settings.proxyUrl}/v1/chat/completions`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

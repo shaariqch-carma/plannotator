@@ -11,9 +11,11 @@ const STORAGE_KEY_ENABLED = 'plannotator-codex-enabled';
 const STORAGE_KEY_MODEL = 'plannotator-codex-model';
 const STORAGE_KEY_PROMPT = 'plannotator-codex-prompt';
 const STORAGE_KEY_PROXY_URL = 'plannotator-codex-proxy-url';
+const STORAGE_KEY_MAX_TURNS = 'plannotator-codex-max-turns';
 
 const DEFAULT_PROXY_URL = 'http://localhost:8317';
 const DEFAULT_MODEL = 'gpt-5-codex';
+const DEFAULT_MAX_TURNS = 10;
 const DEFAULT_PROMPT = `You are reviewing an implementation plan for a software project. Analyze the plan and provide constructive feedback on:
 
 1. **Completeness**: Are there missing steps or considerations?
@@ -52,6 +54,7 @@ export interface CodexReviewSettings {
   proxyUrl: string;
   model: string;
   customPrompt: string;
+  maxTurns: number;
 }
 
 export const FALLBACK_MODEL_OPTIONS = [
@@ -86,6 +89,7 @@ export const getCodexReviewSettings = (): CodexReviewSettings => ({
   proxyUrl: storage.getItem(STORAGE_KEY_PROXY_URL) || DEFAULT_PROXY_URL,
   model: storage.getItem(STORAGE_KEY_MODEL) || DEFAULT_MODEL,
   customPrompt: storage.getItem(STORAGE_KEY_PROMPT) || DEFAULT_PROMPT,
+  maxTurns: parseInt(storage.getItem(STORAGE_KEY_MAX_TURNS) || '', 10) || DEFAULT_MAX_TURNS,
 });
 
 export const saveCodexReviewSettings = (settings: Partial<CodexReviewSettings>): void => {
@@ -100,6 +104,9 @@ export const saveCodexReviewSettings = (settings: Partial<CodexReviewSettings>):
   }
   if (settings.customPrompt !== undefined) {
     storage.setItem(STORAGE_KEY_PROMPT, settings.customPrompt);
+  }
+  if (settings.maxTurns !== undefined) {
+    storage.setItem(STORAGE_KEY_MAX_TURNS, String(settings.maxTurns));
   }
 };
 

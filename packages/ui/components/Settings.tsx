@@ -69,6 +69,7 @@ export const Settings: React.FC<SettingsProps> = ({ taterMode, onTaterModeChange
     proxyUrl: 'http://localhost:8317',
     model: 'gpt-5-codex',
     customPrompt: '',
+    maxTurns: 10,
   });
   const [availableModels, setAvailableModels] = useState<ModelOption[]>(FALLBACK_MODEL_OPTIONS);
   const [modelsLoading, setModelsLoading] = useState(false);
@@ -456,6 +457,20 @@ export const Settings: React.FC<SettingsProps> = ({ taterMode, onTaterModeChange
                               ))}
                             </select>
                           )}
+                        </div>
+
+                        {/* Max Agent Turns */}
+                        <div className="space-y-1.5">
+                          <label className="text-xs text-muted-foreground">Max Agent Turns</label>
+                          <input
+                            type="number"
+                            min={1}
+                            max={50}
+                            value={codexReview.maxTurns}
+                            onChange={(e) => handleCodexReviewChange({ maxTurns: Math.max(1, Math.min(50, parseInt(e.target.value) || 10)) })}
+                            className="w-full px-3 py-2 bg-muted rounded-lg text-xs placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                          />
+                          <p className="text-[10px] text-muted-foreground/70">Number of tool call rounds before stopping (1-50)</p>
                         </div>
 
                         {/* Custom Prompt */}
